@@ -4,17 +4,23 @@
 <a class="back-link" href="{{ url_for('dashboard') }}">&larr; All lessons</a>
 <h1>{{ lesson.title }}</h1>
 
+<div class="card">
+  {% if embed_url %}
+    <div class="video-wrapper">
+      <iframe src="{{ embed_url }}" title="{{ lesson.title }}" frameborder="0"
+        allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+        allowfullscreen></iframe>
+    </div>
+  {% else %}
+    <p class="muted">Video coming soon.</p>
+  {% endif %}
+</div>
+
 {% if storage_error %}
   <div class="card error-card">
-    <p>Video/PDF storage isn't configured yet: {{ storage_error }}</p>
+    <p>PDF storage isn't configured yet: {{ storage_error }}</p>
   </div>
 {% else %}
-  <div class="card">
-    <video controls preload="metadata" style="width:100%; max-width:900px; border-radius:8px;">
-      <source src="{{ video_url }}" type="video/mp4">
-      Your browser doesn't support embedded video. <a href="{{ video_url }}">Download the video</a> instead.
-    </video>
-  </div>
   <div class="card">
     <a class="button" href="{{ pdf_url }}" download>Download printable script (PDF)</a>
   </div>

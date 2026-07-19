@@ -1,10 +1,15 @@
-"""Signed URLs for private Supabase Storage buckets, via raw REST calls --
-same `requests`-only pattern already used in marketing-platform/db.py rather
-than pulling in the supabase-py SDK for one endpoint.
+"""Signed URLs for the private `lesson-pdfs` Supabase Storage bucket, via
+raw REST calls -- same `requests`-only pattern already used in
+marketing-platform/db.py rather than pulling in the supabase-py SDK for one
+endpoint.
 
-Buckets (config.VIDEO_BUCKET / config.PDF_BUCKET) must be created as PRIVATE
-in the Supabase dashboard, with the 8 module videos/PDFs uploaded using the
-exact filenames in lessons_config.py (e.g. "Module 1 Video.mp4").
+Videos are NOT here -- they're unlisted YouTube embeds (see
+lessons_config.py's youtube_embed_url) because Supabase's project-level
+50MB file-size cap can't hold 200-320MB course videos.
+
+The `lesson-pdfs` bucket must exist as PRIVATE in the Supabase dashboard,
+with the 8 PDFs uploaded using the exact filenames in lessons_config.py
+(e.g. "Module 1 Printable Script.pdf") -- already done via upload_lessons.py.
 """
 import requests
 
@@ -21,7 +26,7 @@ def get_signed_url(bucket, object_path, expires_in=None):
         raise StorageError(
             "SUPABASE_URL / SUPABASE_SERVICE_KEY not configured -- set them "
             "as env vars (Render dashboard in production) before lesson "
-            "pages can serve real video/PDF links."
+            "pages can serve real PDF links."
         )
 
     expires_in = expires_in or config.SIGNED_URL_TTL_SECONDS
@@ -42,11 +47,9 @@ def get_signed_url(bucket, object_path, expires_in=None):
     return f"{config.SUPABASE_URL}/storage/v1{signed_path}"
 
 
-def get_lesson_urls(lesson):
-    """Returns (video_url, pdf_url) for a lesson dict from lessons_config.py."""
-    video_url = get_signed_url(config.VIDEO_BUCKET, lesson["video_path"])
-    pdf_url = get_signed_url(config.PDF_BUCKET, lesson["pdf_path"])
-    return video_url, pdf_url
+def get_pdf_url(lesson):
+    """Returns a signed download URL for a lesson dict from lessons_config.py."""
+    return get_signed_url(config.PDF_BUCKET, lesson["pdf_path"])
 
 
 if __name__ == "__main__":
@@ -55,7 +58,7 @@ if __name__ == "__main__":
     config.SUPABASE_URL = None
     config.SUPABASE_SERVICE_KEY = None
     try:
-        get_signed_url("lesson-videos", "Module 1 Video.mp4")
+        get_signed_url("lesson-pdfs", "Module 1 Printable Script.pdf")
         raise AssertionError("expected StorageError when unconfigured")
     except StorageError:
         pass

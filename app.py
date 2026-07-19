@@ -7,8 +7,8 @@ from flask_login import current_user, login_required
 import config
 from auth import auth_bp, login_manager
 from db import db
-from lessons_config import LESSONS, get_lesson
-from storage import get_lesson_urls, StorageError
+from lessons_config import LESSONS, get_lesson, youtube_embed_url
+from storage import get_pdf_url, StorageError
 from stripe_webhook import stripe_bp
 
 logging.basicConfig(level=logging.INFO)
@@ -49,17 +49,21 @@ def create_app():
         if not lesson_data:
             return redirect(url_for("dashboard"))
 
-        video_url = pdf_url = None
+        embed_url = (
+            youtube_embed_url(lesson_data["youtube_id"]) if lesson_data["youtube_id"] else None
+        )
+
+        pdf_url = None
         storage_error = None
         try:
-            video_url, pdf_url = get_lesson_urls(lesson_data)
+            pdf_url = get_pdf_url(lesson_data)
         except StorageError as exc:
             storage_error = str(exc)
 
         return render_template(
             "lesson.html",
             lesson=lesson_data,
-            video_url=video_url,
+            embed_url=embed_url,
             pdf_url=pdf_url,
             storage_error=storage_error,
         )

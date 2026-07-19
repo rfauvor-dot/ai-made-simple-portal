@@ -10,6 +10,10 @@ checkout, deployed to Render as its own service). This repo is the payment
 wall: Stripe fires a webhook here, an account is created, and the student
 logs in to watch 8 module videos and download 8 printable PDFs.
 
+Videos are unlisted YouTube uploads, not Supabase Storage -- the Supabase
+project's global file-size cap (50MB) can't hold 200-320MB course videos.
+See the storage note below.
+
 Sibling projects on this machine (`forex-platform`, `stock-platform`,
 `marketing-platform`) follow the same conventions used here: no
 `requirements.txt`-free approach (this repo does have one), env-var-only
@@ -49,13 +53,22 @@ python stripe_webhook.py
   checks `User.query.filter(User.email.ilike(email))` first and no-ops if
   found. If duplicate-payment refund handling is ever needed, it isn't built
   yet.
-- **Videos/PDFs are never committed to git or served from Render's disk.**
-  The 8 module videos alone are ~200MB each (~2GB total) — `storage.py`
-  generates short-lived signed URLs against private Supabase Storage buckets
-  (`lesson-videos`, `lesson-pdfs`) at request time. Upload the actual files
-  to those buckets from the Supabase dashboard using the exact filenames in
-  `lessons_config.py` (e.g. `Module 1 Video.mp4`) — nothing in this repo
-  uploads them for you.
+- **Videos are unlisted YouTube embeds; PDFs are private Supabase Storage.**
+  Supabase's project-level file-size cap is 50MB, well under the 200-320MB
+  of each module video (confirmed by probing bucket creation with a 500MB
+  `file_size_limit`, which was rejected) — raising it requires a paid plan
+  change Rick hasn't made, so videos live on YouTube instead.
+  `lessons_config.LESSONS[i]["youtube_id"]` is the 11-character ID from each
+  video's URL, filled in by hand after uploading through YouTube Studio (as
+  **unlisted**, not public) — `youtube_embed_url()` turns it into a
+  `youtube-nocookie.com/embed/...` iframe src. Until a lesson's `youtube_id`
+  is set, its page shows a "video coming soon" placeholder instead of a
+  broken embed.
+  PDFs are tiny (~150KB each) and fit fine in Supabase — `storage.py`
+  generates short-lived signed URLs against the private `lesson-pdfs`
+  bucket at request time. `upload_lessons.py` creates that bucket and
+  uploads all 8 PDFs from `Desktop\Modules 1-8 Printable Scripts` (already
+  run once; safe to re-run, it upserts).
 - **`DATABASE_URL` unset → sqlite fallback, by design.** `config.py` defaults
   to a local `local_dev.db` file so the app boots and templates/routes are
   testable without real Supabase credentials. Render **must** set
@@ -80,7 +93,8 @@ python stripe_webhook.py
   (`lessons_config.py`) or manual (Supabase dashboard).
 - No refund/un-enroll handling on the webhook side (only
   `checkout.session.completed` is handled).
-- Video/PDF files themselves are **not** in this repo — see the Supabase
-  Storage note above. They still need to be uploaded from
-  `Desktop\AI made simple 40 plus Modules` and
-  `Desktop\Modules 1-8 Printable Scripts` on this machine.
+- The 8 videos still need to be uploaded to YouTube (unlisted) by hand from
+  `Desktop\AI made simple 40 plus Modules`, and their `youtube_id`s filled
+  into `lessons_config.py` — see the video note above. No automated tooling
+  can do this upload (browser-automation file uploads are capped at 10MB and
+  restricted to session-shared paths).

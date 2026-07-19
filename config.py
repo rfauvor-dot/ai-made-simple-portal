@@ -5,27 +5,31 @@ are set.
 """
 import os
 
-SECRET_KEY = os.environ.get("SECRET_KEY", "dev-only-insecure-key-change-me")
+# `or default` (not `.get(key, default)`) everywhere a default exists, so a
+# blank-but-present line in .env (e.g. "SECRET_KEY=" left empty by a copy
+# from .env.example) falls back safely instead of silently producing an
+# empty string -- Flask treats an empty secret_key as unset and breaks
+# sessions with a confusing error.
+SECRET_KEY = os.environ.get("SECRET_KEY") or "dev-only-insecure-key-change-me"
 
 # Falls back to a local sqlite file when DATABASE_URL isn't set (no Supabase
 # creds available yet) so the app is runnable for local template/route work.
 # Render must set DATABASE_URL to the Supabase Postgres connection string.
-DATABASE_URL = os.environ.get("DATABASE_URL", "sqlite:///local_dev.db")
+DATABASE_URL = os.environ.get("DATABASE_URL") or "sqlite:///local_dev.db"
 
 SUPABASE_URL = os.environ.get("SUPABASE_URL")  # e.g. https://tsxhuzsanoqahsrbumxz.supabase.co
 SUPABASE_SERVICE_KEY = os.environ.get("SUPABASE_SERVICE_KEY")
-VIDEO_BUCKET = os.environ.get("SUPABASE_VIDEO_BUCKET", "lesson-videos")
-PDF_BUCKET = os.environ.get("SUPABASE_PDF_BUCKET", "lesson-pdfs")
-SIGNED_URL_TTL_SECONDS = int(os.environ.get("SIGNED_URL_TTL_SECONDS", "3600"))
+PDF_BUCKET = os.environ.get("SUPABASE_PDF_BUCKET") or "lesson-pdfs"
+SIGNED_URL_TTL_SECONDS = int(os.environ.get("SIGNED_URL_TTL_SECONDS") or "3600")
 
 STRIPE_SECRET_KEY = os.environ.get("STRIPE_SECRET_KEY")
 STRIPE_WEBHOOK_SECRET = os.environ.get("STRIPE_WEBHOOK_SECRET")
 
 SENDGRID_API_KEY = os.environ.get("SENDGRID_API_KEY")
-FROM_EMAIL = os.environ.get("FROM_EMAIL", "noreply@aimadesimple40.com")
-FROM_NAME = os.environ.get("FROM_NAME", "AI Made Simple 40+")
+FROM_EMAIL = os.environ.get("FROM_EMAIL") or "noreply@aimadesimple40.com"
+FROM_NAME = os.environ.get("FROM_NAME") or "AI Made Simple 40+"
 
-PORTAL_BASE_URL = os.environ.get("PORTAL_BASE_URL", "http://localhost:5000")
+PORTAL_BASE_URL = os.environ.get("PORTAL_BASE_URL") or "http://localhost:5000"
 
 if __name__ == "__main__":
     # Synthetic self-test: defaults must be safe to boot with zero env vars set.
