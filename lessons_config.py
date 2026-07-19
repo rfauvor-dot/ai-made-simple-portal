@@ -14,11 +14,22 @@ page shows a "video coming soon" placeholder instead of a broken embed.
 bucket (config.PDF_BUCKET) -- PDFs are tiny and already uploaded there.
 """
 
+YOUTUBE_IDS = {
+    1: "Ow0hkcT73zM",
+    2: "-66o5_SLyZw",
+    3: "OrF5VYOPiDE",
+    4: "yHNPM_VtfEM",
+    5: "MVFHp-i1njY",
+    6: "3739Laa9qGc",
+    7: "Ev9Ed3geYcU",
+    8: "PhjhxLC0Cck",
+}
+
 LESSONS = [
     {
         "id": i,
         "title": f"Module {i}",
-        "youtube_id": None,  # e.g. "dQw4w9WgXcQ" -- fill in after uploading
+        "youtube_id": YOUTUBE_IDS.get(i),
         "pdf_path": f"Module {i} Printable Script.pdf",
     }
     for i in range(1, 9)
@@ -38,4 +49,6 @@ if __name__ == "__main__":
     assert get_lesson(1)["title"] == "Module 1"
     assert get_lesson(99) is None
     assert youtube_embed_url("abc123").endswith("/embed/abc123")
+    assert all(lesson["youtube_id"] for lesson in LESSONS), "every lesson should have a youtube_id set"
+    assert len({lesson["youtube_id"] for lesson in LESSONS}) == 8, "youtube_ids should all be distinct"
     print("lessons_config.py self-test passed")
