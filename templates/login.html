@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+{% block title %}Log in - AI Made Simple 40+{% endblock %}
+{% block content %}
+<div class="card login-card">
+  <h1>Student Login</h1>
+  <form method="post">
+    <label>Email
+      <input type="email" name="email" required autofocus>
+    </label>
+    <label>Password
+      <input type="password" name="password" required>
+    </label>
+    <button type="submit">Log in</button>
+  </form>
+  <p class="muted">Your login was emailed to you after checkout. Contact support if you can't find it.</p>
+</div>
+{% endblock %}

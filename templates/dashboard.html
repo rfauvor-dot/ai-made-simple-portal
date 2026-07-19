@@ -1,0 +1,13 @@
+{% extends "base.html" %}
+{% block title %}My Lessons - AI Made Simple 40+{% endblock %}
+{% block content %}
+<h1>Your Lessons</h1>
+<div class="lesson-grid">
+  {% for lesson in lessons %}
+  <a class="card lesson-card" href="{{ url_for('lesson', lesson_id=lesson.id) }}">
+    <span class="lesson-number">Module {{ lesson.id }}</span>
+    <span class="lesson-title">{{ lesson.title }}</span>
+  </a>
+  {% endfor %}
+</div>
+{% endblock %}

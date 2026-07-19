@@ -1,0 +1,33 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>{% block title %}AI Made Simple 40+{% endblock %}</title>
+  <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+</head>
+<body>
+  <header class="topbar">
+    <div class="topbar-inner">
+      <span class="brand">AI Made Simple <span class="brand-accent">40+</span></span>
+      {% if current_user.is_authenticated %}
+        <nav>
+          <a href="{{ url_for('dashboard') }}">My Lessons</a>
+          <a href="{{ url_for('auth.logout') }}">Log out</a>
+        </nav>
+      {% endif %}
+    </div>
+  </header>
+
+  <main class="content">
+    {% with messages = get_flashed_messages() %}
+      {% if messages %}
+        <div class="flash">
+          {% for message in messages %}<p>{{ message }}</p>{% endfor %}
+        </div>
+      {% endif %}
+    {% endwith %}
+    {% block content %}{% endblock %}
+  </main>
+</body>
+</html>
