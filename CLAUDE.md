@@ -82,6 +82,14 @@ python stripe_webhook.py
   `schema.sql` must be applied there first (Supabase SQL editor) — SQLAlchemy
   does not manage migrations here, `db.create_all()` is a no-op once the
   table already exists.
+- **`DATABASE_URL` must be Supabase's POOLED connection string, not the
+  direct one.** Confirmed via `test_webhook.py` against production: the
+  direct connection (`db.<ref>.supabase.co:5432`) is IPv6-only in many
+  Supabase regions, and Render's networking can't reach it — the webhook
+  hung for ~30s then 500'd with no row ever written. The pooled/Supavisor
+  string (Project Settings → Database → Connection pooling → Transaction
+  mode, `aws-0-<region>.pooler.supabase.com:6543`, username
+  `postgres.<project-ref>`) works from Render. See `.env.example`.
 - **Email sending defaults to dry-run.** `email_service.send_welcome_email`
   only sends for real if `SENDGRID_API_KEY` is set AND `dry_run=False` is
   passed explicitly (the webhook handler does pass `dry_run=False` — the
