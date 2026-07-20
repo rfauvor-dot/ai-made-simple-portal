@@ -19,6 +19,12 @@ def create_app():
     app.config["SECRET_KEY"] = config.SECRET_KEY
     app.config["SQLALCHEMY_DATABASE_URI"] = config.DATABASE_URL
     app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
+    if not config.DATABASE_URL.startswith("sqlite:"):
+        # A hung connection attempt should fail loudly within seconds, not
+        # block a request (or, previously, the whole deploy) indefinitely --
+        # this exact class of silent hang is what made the Render port-scan
+        # timeout hard to diagnose.
+        app.config["SQLALCHEMY_ENGINE_OPTIONS"] = {"connect_args": {"connect_timeout": 10}}
 
     stripe.api_key = config.STRIPE_SECRET_KEY
 
@@ -28,8 +34,14 @@ def create_app():
     app.register_blueprint(auth_bp)
     app.register_blueprint(stripe_bp)
 
-    with app.app_context():
-        db.create_all()  # no-op against Supabase once schema.sql has been applied there
+    if config.DATABASE_URL.startswith("sqlite:"):
+        # Only for local dev -- production schema is managed by schema.sql,
+        # applied manually in Supabase. Running this unconditionally at
+        # import time made gunicorn's startup (and therefore Render's port
+        # binding) depend on DB connectivity: a slow/failed connection here
+        # blocked the whole deploy instead of just one request.
+        with app.app_context():
+            db.create_all()
 
     @app.route("/")
     def index():
