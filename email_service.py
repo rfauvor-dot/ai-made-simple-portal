@@ -35,13 +35,48 @@ def send_welcome_email(to_email, temp_password, dry_run=True):
         subject=subject,
         plain_text_content=body_text,
     )
-    client = SendGridAPIClient(config.SENDGRID_API_KEY)
-    response = client.send(message)
-    return {"dry_run": False, "to": to_email, "status_code": response.status_code}
+    try:
+        client = SendGridAPIClient(config.SENDGRID_API_KEY)
+        response = client.send(message)
+        return {"dry_run": False, "to": to_email, "status_code": response.status_code}
+    except Exception as exc:
+        # The account was already created before this runs (see
+        # stripe_webhook.handle_checkout_completed) -- a bad/placeholder
+        # SendGrid key must not turn that success into a 500 that makes
+        # Stripe think webhook delivery itself failed and keep retrying.
+        # Log it loudly and let the caller decide the account creation was
+        # still the success that matters.
+        logger.error("Welcome email to %s failed to send: %s", to_email, exc)
+        return {"dry_run": False, "to": to_email, "error": str(exc)}
 
 
 if __name__ == "__main__":
     result = send_welcome_email("student@example.com", "temp-pw-123", dry_run=True)
     assert result["dry_run"] is True
     assert result["to"] == "student@example.com"
+
+    # A bad key / send failure must return an error dict, never raise --
+    # this is exactly what broke production before it was caught: the real
+    # webhook route doesn't (and shouldn't have to) wrap this call in its
+    # own try/except.
+    import sendgrid
+
+    config.SENDGRID_API_KEY = "placeholder_invalid_key"
+    original_client = sendgrid.SendGridAPIClient
+
+    class _FailingClient:
+        def __init__(self, *a, **kw):
+            pass
+
+        def send(self, *a, **kw):
+            raise RuntimeError("simulated SendGrid failure (invalid key)")
+
+    sendgrid.SendGridAPIClient = _FailingClient
+    try:
+        result = send_welcome_email("student@example.com", "temp-pw-123", dry_run=False)
+        assert result["dry_run"] is False
+        assert "error" in result
+    finally:
+        sendgrid.SendGridAPIClient = original_client
+
     print("email_service.py self-test passed")
